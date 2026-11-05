@@ -3,3 +3,4 @@ __pycache__/
 data/feats.npy
 data/feats_city.npy
 *.whl
+data/feats_*.npy
