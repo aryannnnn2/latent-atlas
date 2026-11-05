@@ -1,4 +1,4 @@
-\# Latent Atlas: does GPT-2 have a mental map of the world?
+\#Latent Atlas: does GPT-2 have a mental map of the world?
 
 
 
