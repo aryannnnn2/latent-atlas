@@ -14,20 +14,22 @@ hover = (df["city"] + ", " + df["country"] + "<br>error: " + err.round().astype(
 fig = go.Figure()
 fig.add_trace(go.Scattergeo(lat=LAT, lon=LON, mode="markers", text=hover, hoverinfo="text",
                             marker=dict(size=4, color=err, colorscale="Turbo", cmin=0, cmax=10000,
-                                        colorbar=dict(title="error (km)")),
+                                        colorbar=dict(title="error (km)", y=0.4, len=0.6)),
                             name="true location"))
 
-worst = np.argsort(-err)[:150]
+worst = np.argsort(-err)[:40]
 lats, lons = [], []
 for i in worst:
     lats += [LAT[i], plat[i], None]
     lons += [LON[i], plon[i], None]
 fig.add_trace(go.Scattergeo(lat=lats, lon=lons, mode="lines", line=dict(width=0.6, color="red"),
-                            hoverinfo="skip", name="150 worst: true -> predicted"))
+                            hoverinfo="skip", name="40 worst: true -> predicted"))
 fig.add_trace(go.Scattergeo(lat=plat[worst], lon=plon[worst], mode="markers",
                             marker=dict(size=5, color="red"), text=hover[worst], hoverinfo="text",
-                            name="predicted (150 worst)"))
+                            name="predicted (40 worst)"))
 fig.update_layout(title="Latent Atlas: where GPT-2 small thinks cities are (test countries unseen)",
-                  geo=dict(projection_type="natural earth"), height=650, margin=dict(l=0, r=0, t=50, b=0))
+                  geo=dict(projection_type="natural earth"), height=650,
+                  margin=dict(l=0, r=0, t=50, b=0),
+                  legend=dict(orientation="h", y=-0.05, x=0.5, xanchor="center"))
 fig.write_html("docs/index.html", include_plotlyjs="cdn")
 print("saved docs/index.html", "| median error:", np.median(err))
