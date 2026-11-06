@@ -2,11 +2,13 @@
 
 I trained linear probes on GPT-2's hidden states to predict the location of 3,000 cities. The test only uses **countries the probe never saw during training**.
 
-**Headline result:** with a 3D probe on GPT-2's final layer, median location error is **~3,500 km** (prompt "I traveled to {city}") and **~3,850 km** from the bare city name, versus **~6,250 km** for guessing the average. A baseline that uses only each country's primary language gets **~4,060 km**, so much of the signal is language identity.
+**Headline result:** with a 3D probe on GPT-2 small's final layer, median location error is **~3,500 km** (prompt "I traveled to {city}") and **~3,850 km** from the bare city name, versus **~6,250 km** for guessing the average. GPT-2 medium gets **~2,840 km** with the same prompt. Two baselines that use no hidden states get ~4,060 km (primary language only) and ~4,420 km (character n-grams of the name), so much of the signal is language and spelling, but the GPT-2 probes are clearly better than both.
+
+**[Interactive map demo](https://aryannnnn2.github.io/latent-atlas/)**
 
 ## Why this matters
 
-GPT-2 only ever read text, and nobody told it where cities are. If a simple linear model can read location out of its hidden states, the model has picked up some geography from language alone. The language-only baseline below shows how much of that is just recognizing a name's language.
+GPT-2 only ever read text, and nobody told it where cities are. If a simple linear model can read location out of its hidden states, the model has picked up some geography from language alone. The baselines below show how much of that is just recognizing a name's language or spelling.
 
 ![error per layer](results/city_error_per_layer.png)
 
@@ -20,7 +22,7 @@ GPT-2 only ever read text, and nobody told it where cities are. If a simple line
 2. Feed each city name to GPT-2 and save the hidden state of the last token at every layer.
 3. For each layer, train a Ridge regression to predict location.
 4. Evaluate with splits by country, so test countries are fully unseen. A random split would let the probe memorize "India means this area".
-5. Controls: a probe trained on shuffled labels, an "always guess the average" baseline, and a language-only baseline.
+5. Controls: a probe trained on shuffled labels, an "always guess the average" baseline, a language-only baseline, and a character n-gram baseline.
 
 ## Findings
 
@@ -40,15 +42,34 @@ GPT-2 only ever read text, and nobody told it where cities are. If a simple line
 
 ![v2 layers](results/v2_layers.png)
 
+## Update 2: scale, spelling baseline, demo
+
+- **Scale:** with the "I traveled to {city}" prompt, best-layer median error is 3,497 ± 78 km for GPT-2 small (124M) and 2,840 ± 79 km for GPT-2 medium (355M). This is a two-point comparison, and each model's best layer is chosen on the test folds, which slightly favors the larger model.
+- **Spelling baseline:** a TF-IDF character n-gram model on the city name alone (no GPT-2) gets 4,423 ± 66 km, compared with 3,845 ± 42 km for the bare-name GPT-2 probe and 4,058 ± 129 km for the language-only baseline. Spelling carries much of the signal, but the GPT-2 probes are still clearly better.
+- **Oceania:** the 3D probe did not fix it (~15,700 km). My guess is that few training countries are near it, but I have not tested that.
+- **Demo:** the [interactive map](https://aryannnnn2.github.io/latent-atlas/) shows true locations coloured by error, with the 150 worst predictions drawn as lines from the true to the predicted location.
+
+![scale](results/scale.png)
+
 ## Related work
 
-This project follows Gurnee & Tegmark (2023), *Language Models Represent Space and Time* (arXiv:2310.02207), which probes LLM hidden states for place coordinates. Probes follow Alain & Bengio (2016); the shuffled-label control follows Hewitt & Liang (2019). This repo is a small-scale replication on GPT-2 small. It adds a country-held-out split, a check that "City, Country" inputs leak the answer through the country token, and a language-only baseline.
+This project follows Gurnee & Tegmark (2023), *Language Models Represent Space and Time* (arXiv:2310.02207), which probes LLM hidden states for place coordinates. Probes follow Alain & Bengio (2016); the shuffled-label control follows Hewitt & Liang (2019).
+
+## What this repo does
+
+This is a small, CPU-scale replication on GPT-2 small and medium. Its setup choices are:
+
+- evaluation on held-out countries, with several random country-to-fold assignments and confidence intervals;
+- a check showing that "City, Country" inputs leak the answer through the country token;
+- two baselines that use no hidden states (primary language, and character n-grams of the name).
 
 ## Limitations
 
-- Small model (GPT-2 small), 3,000 cities.
+- Small models (GPT-2 small and medium), 3,000 cities.
 - Seeds vary only the country-to-fold split, so the confidence intervals reflect split variability, not model or data variability.
-- "Primary language" is a crude proxy for language family, and the language-only baseline was not tuned.
+- The best layer is chosen on the same test folds, which slightly favors models with more layers. The scale result has only two points.
+- "Primary language" is a crude proxy for language family. The language-only baseline was not tuned, and the character n-gram baseline's regularization was tuned on the test folds.
+- GPT-2 medium features were stored as float16 to save disk space.
 - Few training examples near isolated regions (Oceania), so errors there are large.
 
 ## Bug story
@@ -57,10 +78,16 @@ Namibia's country code is "NA", which pandas silently reads as missing data. Thi
 
 ## Run it
 
-    pip install -r requirements.txt
-    python extract_city.py
-    python probe_city.py
-    python extract_templates.py
-    python probe_v2.py
+```bash
+pip install -r requirements.txt plotly
+python extract_city.py
+python probe_city.py
+python extract_templates.py
+python probe_v2.py
+python probe_ngram.py
+python extract_model.py gpt2-medium
+python probe_scale.py
+python make_demo.py
+```
 
-`extract.py` and `probe.py` run the "City, Country" version.
+`common.py` holds shared helper functions. `extract.py` and `probe.py` run the "City, Country" version.
