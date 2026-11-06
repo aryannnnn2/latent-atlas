@@ -47,7 +47,7 @@ GPT-2 only ever read text, and nobody told it where cities are. If a simple line
 - **Scale:** with the "I traveled to {city}" prompt, best-layer median error is 3,497 ± 78 km for GPT-2 small (124M) and 2,840 ± 79 km for GPT-2 medium (355M). This is a two-point comparison, and each model's best layer is chosen on the test folds, which slightly favors the larger model.
 - **Spelling baseline:** a TF-IDF character n-gram model on the city name alone (no GPT-2) gets 4,423 ± 66 km, compared with 3,845 ± 42 km for the bare-name GPT-2 probe and 4,058 ± 129 km for the language-only baseline. Spelling carries much of the signal, but the GPT-2 probes are still clearly better.
 - **Oceania:** the 3D probe did not fix it (~15,700 km). My guess is that few training countries are near it, but I have not tested that.
-- **Demo:** the [interactive map](https://aryannnnn2.github.io/latent-atlas/) shows true locations coloured by error, with the 150 worst predictions drawn as lines from the true to the predicted location.
+- **Demo:** the [interactive map](https://aryannnnn2.github.io/latent-atlas/) shows true locations coloured by error, with the 40 worst predictions drawn as lines from the true to the predicted location.
 
 ![scale](results/scale.png)
 
